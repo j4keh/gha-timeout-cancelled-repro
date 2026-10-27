@@ -1,0 +1,46 @@
+name: job-failure
+on: workflow_dispatch
+permissions: {}
+
+jobs:
+  failing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: exit 1
+
+  if-not-cancelled-and-not-failure:
+    needs: failing
+    if: ${{ !cancelled() && !failure() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "ran"
+
+  if-cancelled:
+    needs: failing
+    if: ${{ cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "ran"
+
+  if-failure:
+    needs: failing
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "ran"
+
+  report:
+    needs: failing
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - env:
+          RESULT: ${{ needs.failing.result }}
+        run: |
+          echo "needs.failing.result=${RESULT}"
+          echo "- \`needs.failing.result\`: \`${RESULT}\`" >> "$GITHUB_STEP_SUMMARY"

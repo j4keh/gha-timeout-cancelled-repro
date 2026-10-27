@@ -1,0 +1,46 @@
+name: job-timeout
+on: workflow_dispatch
+permissions: {}
+
+jobs:
+  slow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: sleep 90
+
+  if-not-cancelled-and-not-failure:
+    needs: slow
+    if: ${{ !cancelled() && !failure() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "ran"
+
+  if-cancelled:
+    needs: slow
+    if: ${{ cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "ran"
+
+  if-failure:
+    needs: slow
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "ran"
+
+  report:
+    needs: slow
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - env:
+          RESULT: ${{ needs.slow.result }}
+        run: |
+          echo "needs.slow.result=${RESULT}"
+          echo "- \`needs.slow.result\`: \`${RESULT}\`" >> "$GITHUB_STEP_SUMMARY"

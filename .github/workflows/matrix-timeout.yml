@@ -1,0 +1,63 @@
+name: matrix-timeout
+on: workflow_dispatch
+permissions: {}
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        leg: [fast, slow]
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      fast: ${{ steps.done.outputs.fast }}
+      slow: ${{ steps.done.outputs.slow }}
+    steps:
+      # Only the first attempt times out, so "Re-run failed jobs" lets the slow leg finish
+      - if: matrix.leg == 'slow' && github.run_attempt == '1'
+        run: sleep 90
+      - id: done
+        env:
+          LEG: ${{ matrix.leg }}
+        run: echo "${LEG}=true" >> "$GITHUB_OUTPUT"
+
+  if-not-cancelled-and-not-failure:
+    needs: build
+    if: ${{ !cancelled() && !failure() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "ran"
+
+  if-cancelled:
+    needs: build
+    if: ${{ cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "ran"
+
+  if-failure:
+    needs: build
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "ran"
+
+  report:
+    needs: build
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - env:
+          RESULT: ${{ needs.build.result }}
+          OUTPUTS: ${{ toJSON(needs.build.outputs) }}
+        run: |
+          echo "needs.build.result=${RESULT}"
+          echo "needs.build.outputs=${OUTPUTS}"
+          {
+            echo "- \`needs.build.result\`: \`${RESULT}\`"
+            echo "- \`needs.build.outputs\`: \`$(echo "${OUTPUTS}" | jq -c .)\`"
+          } >> "$GITHUB_STEP_SUMMARY"
