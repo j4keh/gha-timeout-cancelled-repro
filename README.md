@@ -2,11 +2,13 @@
 
 Reproduces how GitHub Actions treats a job that is canceled because it exceeded `timeout-minutes`, as seen from the jobs that depend on it.
 
-Each workflow runs on `workflow_dispatch` and has one upstream job followed by four probe jobs that `need` it:
+Each workflow runs on `workflow_dispatch` and has one upstream job followed by six probe jobs that `need` it:
 
 | Probe job | `if` |
 |---|---|
 | `if-not-cancelled-and-not-failure` | `${{ !cancelled() && !failure() }}` |
+| `if-not-cancelled` | `${{ !cancelled() }}` |
+| `no-if` | None (the default `success()`) |
 | `if-cancelled` | `${{ cancelled() }}` |
 | `if-failure` | `${{ failure() }}` |
 | `report` | `${{ always() }}`, prints `needs.<job_id>.result` (and outputs) to the job summary |

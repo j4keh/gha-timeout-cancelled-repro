@@ -17,6 +17,21 @@ jobs:
     steps:
       - run: echo "ran"
 
+  if-not-cancelled:
+    needs: slow
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "ran"
+
+  no-if:
+    needs: slow
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "ran"
+
   if-cancelled:
     needs: slow
     if: ${{ cancelled() }}
